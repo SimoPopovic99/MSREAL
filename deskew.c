@@ -21,57 +21,57 @@
 #include <linux/uaccess.h>
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Driver for VGA ouvput");
-#define DEVICE_NAME "vga"
-#define DRIVER_NAME "vga_driver"
+MODULE_DESCRIPTION("Driver for deskew ouvput");
+#define DEVICE_NAME "deskew"
+#define DRIVER_NAME "deskew_driver"
 
 //*************************************************************************
-static int vga_probe(struct platform_device *pdev);
-static int vga_open(struct inode *i, struct file *f);
-static int vga_close(struct inode *i, struct file *f);
-static ssize_t vga_read(struct file *f, char __user *buf, size_t len, loff_t *off);
-static ssize_t vga_write(struct file *f, const char __user *buf, size_t count, loff_t *off);
-static int __init vga_init(void);
-static void __exit vga_exit(void);
-static int vga_remove(struct platform_device *pdev);
+static int deskew_probe(struct platform_device *pdev);
+static int deskew_open(struct inode *i, struct file *f);
+static int deskew_close(struct inode *i, struct file *f);
+static ssize_t deskew_read(struct file *f, char __user *buf, size_t len, loff_t *off);
+static ssize_t deskew_write(struct file *f, const char __user *buf, size_t count, loff_t *off);
+static int __init deskew_init(void);
+static void __exit deskew_exit(void);
+static int deskew_remove(struct platform_device *pdev);
 
 
 static char chToUpper(char ch);
 static unsigned long strToInt(const char* pStr, int len, int base);
 
 //*********************GLOBAL VARIABLES*************************************
-static struct file_operations vga_fops =
+static struct file_operations deskew_fops =
 {
     .owner = THIS_MODULE,
-    .open = vga_open,
-    .release = vga_close,
-    .read = vga_read,
-    .write = vga_write
+    .open = deskew_open,
+    .release = deskew_close,
+    .read = deskew_read,
+    .write = deskew_write
 };
-static struct of_device_id vga_of_match[] = {
+static struct of_device_id deskew_of_match[] = {
     { .compatible = "xlnx,gpio_bram_control", },
     { /* end of list */ },
 };
 
-static struct platform_driver vga_driver = {
+static struct platform_driver deskew_driver = {
     .driver = {
 	.name = DRIVER_NAME,
 	.owner = THIS_MODULE,
-	.of_match_table	= vga_of_match,
+	.of_match_table	= deskew_of_match,
     },
-    .probe		= vga_probe,
-    .remove	= vga_remove,
+    .probe		= deskew_probe,
+    .remove	= deskew_remove,
 };
 
-struct vga_info {
+struct deskew_info {
     unsigned long mem_start;
     unsigned long mem_end;
     void __iomem *base_addr;
 };
 
-static struct vga_info *vp = NULL;
+static struct deskew_info *vp = NULL;
 
-MODULE_DEVICE_TABLE(of, vga_of_match);
+MODULE_DEVICE_TABLE(of, deskew_of_match);
 
 static struct cdev c_dev;
 static dev_t first;
@@ -81,7 +81,7 @@ static int int_cnt;
 //***************************************************
 // PROBE AND REMOVE
 
-static int vga_probe(struct platform_device *pdev)
+static int deskew_probe(struct platform_device *pdev)
 {
     struct resource *r_mem;
     int rc = 0;
@@ -93,9 +93,9 @@ static int vga_probe(struct platform_device *pdev)
 	printk(KERN_ALERT "invalid address\n");
 	return -ENODEV;
     }
-    vp = (struct vga_info *) kmalloc(sizeof(struct vga_info), GFP_KERNEL);
+    vp = (struct deskew_info *) kmalloc(sizeof(struct deskew_info), GFP_KERNEL);
     if (!vp) {
-	printk(KERN_ALERT "Cound not allocate vga device\n");
+	printk(KERN_ALERT "Cound not allocate deskew device\n");
 	return -ENOMEM;
     }
 
@@ -110,7 +110,7 @@ static int vga_probe(struct platform_device *pdev)
 	goto error1;
     }
     else {
-	printk(KERN_INFO "vga_init: Successfully allocated memory region for vga\n");
+	printk(KERN_INFO "deskew_init: Successfully allocated memory region for deskew\n");
     }
     /* 
      * Map Physical address to Virtual address
@@ -118,7 +118,7 @@ static int vga_probe(struct platform_device *pdev)
 
     vp->base_addr = ioremap(vp->mem_start, vp->mem_end - vp->mem_start + 1);
     if (!vp->base_addr) {
-	printk(KERN_ALERT "vga: Could not allocate iomem\n");
+	printk(KERN_ALERT "deskew: Could not allocate iomem\n");
 	rc = -EIO;
 	goto error2;
     }
@@ -131,7 +131,7 @@ error1:
 
 }
 
-static int vga_remove(struct platform_device *pdev)
+static int deskew_remove(struct platform_device *pdev)
 {
     // Exit Device Module
     iounmap(vp->base_addr);
@@ -142,22 +142,22 @@ static int vga_remove(struct platform_device *pdev)
 //***************************************************
 // IMPLEMENTATION OF FILE OPERATION FUNCTIONS
 
-static int vga_open(struct inode *i, struct file *f)
+static int deskew_open(struct inode *i, struct file *f)
 {
-    //printk("vga opened\n");
+    //printk("deskew opened\n");
     return 0;
 }
-static int vga_close(struct inode *i, struct file *f)
+static int deskew_close(struct inode *i, struct file *f)
 {
-    //printk("vga closed\n");
+    //printk("deskew closed\n");
     return 0;
 }
-static ssize_t vga_read(struct file *f, char __user *buf, size_t len, loff_t *off)
+static ssize_t deskew_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 {
-    //printk("vga read\n");
+    //printk("deskew read\n");
     return 0;
 }
-static ssize_t vga_write(struct file *f, const char __user *buf, size_t count, loff_t *off)
+static ssize_t deskew_write(struct file *f, const char __user *buf, size_t count, loff_t *off)
 {	
     char buffer[count];
     char *lp='\0';
@@ -285,14 +285,14 @@ static unsigned long strToInt(const char* pStr, int len, int base)
 //***************************************************
 // INIT AND EXIT FUNCTIONS OF THE DRIVER
 
-static int __init vga_init(void)
+static int __init deskew_init(void)
 {
 
     int_cnt = 0;
 
-    printk(KERN_INFO "vga_init: Initialize Module \"%s\"\n", DEVICE_NAME);
+    printk(KERN_INFO "deskew_init: Initialize Module \"%s\"\n", DEVICE_NAME);
 
-    if (alloc_chrdev_region(&first, 0, 1, "VGA_region") < 0)
+    if (alloc_chrdev_region(&first, 0, 1, "deskew_region") < 0)
     {
 	printk(KERN_ALERT "<1>Failed CHRDEV!.\n");
 	return -1;
@@ -305,14 +305,14 @@ static int __init vga_init(void)
 	goto fail_0;
     }
     printk(KERN_INFO "Succ class chardev1 create!.\n");
-    if (device_create(cl, NULL, MKDEV(MAJOR(first),0), NULL, "vga") == NULL)
+    if (device_create(cl, NULL, MKDEV(MAJOR(first),0), NULL, "deskew") == NULL)
     {
 	goto fail_1;
     }
 
     printk(KERN_INFO "Device created.\n");
 
-    cdev_init(&c_dev, &vga_fops);
+    cdev_init(&c_dev, &deskew_fops);
     if (cdev_add(&c_dev, first, 1) == -1)
     {
 	goto fail_2;
@@ -320,7 +320,7 @@ static int __init vga_init(void)
 
     printk(KERN_INFO "Device init.\n");
 
-    return platform_driver_register(&vga_driver);
+    return platform_driver_register(&deskew_driver);
 
 fail_2:
     device_destroy(cl, MKDEV(MAJOR(first),0));
@@ -332,21 +332,21 @@ fail_0:
 
 } 
 
-static void __exit vga_exit(void)  		
+static void __exit deskew_exit(void)  		
 {
 
-    platform_driver_unregister(&vga_driver);
+    platform_driver_unregister(&deskew_driver);
     cdev_del(&c_dev);
     device_destroy(cl, MKDEV(MAJOR(first),0));
     class_destroy(cl);
     unregister_chrdev_region(first, 1);
-    printk(KERN_INFO "vga_exit: Exit Device Module \"%s\".\n", DEVICE_NAME);
+    printk(KERN_INFO "deskew_exit: Exit Device Module \"%s\".\n", DEVICE_NAME);
 }
 
-module_init(vga_init);
-module_exit(vga_exit);
+module_init(deskew_init);
+module_exit(deskew_exit);
 
 MODULE_AUTHOR ("FTN");
-MODULE_DESCRIPTION("Test Driver for VGA output.");
+MODULE_DESCRIPTION("Test Driver for deskew output.");
 MODULE_LICENSE("GPL v2");
-MODULE_ALIAS("custom:vga");
+MODULE_ALIAS("custom:deskew");
