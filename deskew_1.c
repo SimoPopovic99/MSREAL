@@ -135,7 +135,7 @@ static int deskew_probe(struct platform_device *pdev)
 			{
 			  printk(KERN_ALERT "Couldn't lock memory region at %p\n",(void *)deskew->mem_start);
 			  rc = -EBUSY;
-			  goto error1;O
+			  goto error1;
 			}
 		  deskew->base_addr = ioremap(deskew->mem_start, deskew->mem_end - deskew->mem_start + 1);
 		  if (!deskew->base_addr)
