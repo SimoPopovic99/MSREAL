@@ -50,9 +50,10 @@ static int __init deskew_init(void);
 static void __exit deskew_exit(void);
 static int deskew_remove(struct platform_device *pdev);
 
-unsigned int rows, cols;
+//unsigned int rows, cols;
 unsigned int ready, start;
 int endRead = 0;
+unsigned int xpos = 0, ypos = 0;
 
 
 
@@ -237,9 +238,8 @@ static int deskew_close(struct inode *i, struct file *f)
 
 ssize_t deskew_write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset)
 {
-  char buf[BUFF_SIZE];	//ok
+  char buff[BUFF_SIZE];	//ok
   int minor = MINOR(pfile->f_inode->i_rdev);	//ok
-  unsigned int xpos = 0, ypos = 0;
   char val = 0;
   int pos = 0;
   int start;
@@ -254,7 +254,7 @@ ssize_t deskew_write(struct file *pfile, const char __user *buffer, size_t lengt
 	switch (minor)
 	{
 		case 0:
-		sscanf(buf, "%d, %d, %d", &xpos, &ypos, &start);
+		sscanf(buff, "%d, %d, %d", &xpos, &ypos, &start);
 		iowrite32(start, deskew->base_addr + START);
 		udelay(100);
 		if(start == 1)
@@ -279,9 +279,9 @@ ssize_t deskew_write(struct file *pfile, const char __user *buffer, size_t lengt
 }
 
 
-ssize_t imdct_read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset) 
+ssize_t deskew_read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset) 
 { 
-	char buf[BUFF_SIZE];
+	char buff[BUFF_SIZE];
 	int minor = MINOR(pfile->f_inode->i_rdev);
 	long int len = 0;
 	unsigned int i = 0;
@@ -312,7 +312,7 @@ ssize_t imdct_read(struct file *pfile, char __user *buffer, size_t length, loff_
 		break;
 		
 		case 1:
-        if(doutb < 784)
+        if(i < 784)
         {
             value = ioread32(bram -> base_addr + 4*i);
             len = scnprintf(buff, BUFF_SIZE, "%d\n", value);
