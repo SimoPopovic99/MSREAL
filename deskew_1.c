@@ -50,10 +50,9 @@ static int __init deskew_init(void);
 static void __exit deskew_exit(void);
 static int deskew_remove(struct platform_device *pdev);
 
-//unsigned int rows, cols;
-unsigned int ready, start;
+//unsigned int ready, start;
 int endRead = 0;
-unsigned int xpos = 0, ypos = 0;
+unsigned int start = 0, ready = 0;
 
 
 
@@ -240,7 +239,7 @@ ssize_t deskew_write(struct file *pfile, const char __user *buffer, size_t lengt
 {
   char buff[BUFF_SIZE];	//ok
   int minor = MINOR(pfile->f_inode->i_rdev);	//ok
-  char val = 0;
+  int val = 0;
   int pos = 0;
   int start;
 	
@@ -254,15 +253,15 @@ ssize_t deskew_write(struct file *pfile, const char __user *buffer, size_t lengt
 	switch (minor)
 	{
 		case 0:
-		sscanf(buff, "%d, %d, %d", &xpos, &ypos, &start);
+		sscanf(buff, "%d, %d, %d", &start, &ready, &start);
 		iowrite32(start, deskew->base_addr + START);
 		udelay(100);
 		if(start == 1)
 		{
 			printk(KERN_INFO "[WRITE] Succesfully started deskew device\n");
 		}
-		iowrite32(xpos, deskew -> base_addr);
-		iowrite32(ypos, deskew -> base_addr);
+		iowrite32(start, deskew -> base_addr);
+		iowrite32(ready, deskew -> base_addr);
 		break;
 		case 1:
 		sscanf(buff, "%d %d", &pos, &val);
@@ -284,11 +283,12 @@ ssize_t deskew_read(struct file *pfile, char __user *buffer, size_t length, loff
 	char buff[BUFF_SIZE];
 	int minor = MINOR(pfile->f_inode->i_rdev);
 	long int len = 0;
-	unsigned int i = 0;
+	static unsigned int i = 0;
 	int value;
 	
 	if(endRead)
 	{
+	i = 0;
     endRead = 0;
     printk(KERN_INFO"Succesfully read\n");
     return 0;
@@ -298,12 +298,13 @@ ssize_t deskew_read(struct file *pfile, char __user *buffer, size_t length, loff
 	{
 		case 0:
 		printk(KERN_INFO "[READ] Reading from deskew device. \n");
-		xpos = ioread32(deskew -> base_addr);
-		printk(KERN_INFO "[READ] Succesfully read xpos. \n");
-		ypos = ioread32(deskew -> base_addr);
-		printk(KERN_INFO "[READ] Succesfully read ypos. \n");
-		len = scnprintf(buff, BUFF_SIZE, "xpos = %d, ypos = %d\n", xpos, ypos); 
+		start = ioread32(deskew -> base_addr);
+		printk(KERN_INFO "[READ] Succesfully read start. \n");//changes
+		ready = ioread32(deskew -> base_addr + 4);
+		printk(KERN_INFO "[READ] Succesfully read ready. \n");
+		len = scnprintf(buff, BUFF_SIZE, "start = %d, ready = %d\n", start, ready); 
 		// scnprintf smesta formatirane podatke u bafer, prati velicinu bafera i sprecava prekoracenje 
+		endRead = 1; //dodato
 		if(copy_to_user(buffer, buff, len))
         {  
 			return -EFAULT;  
@@ -318,6 +319,8 @@ ssize_t deskew_read(struct file *pfile, char __user *buffer, size_t length, loff
             len = scnprintf(buff, BUFF_SIZE, "%d\n", value);
         }
         i++;
+		if(i == 784)
+			endRead = 1;
 		if(copy_to_user(buffer, buff, len))
         {
 			return -EFAULT;  
